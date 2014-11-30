@@ -1,0 +1,101 @@
+
+
+<DOCTYPE html>
+<html>
+<head>
+<meta charset=utf-8 />
+<title>Test</title>
+<style>
+  #chat-input {
+    position: fixed;
+    bottom: 10;
+  	width: 258px;
+  	height: 40px;
+  	font-size: 14px;
+  	resize: none;
+  }
+
+  #chat-output {
+  	/*border: 1px solid #DDDDDD;*/
+  	max-height: 300px;
+    width : 260px;
+  	margin-bottom: 8px;
+  	overflow: auto;
+  }
+
+  #chat-inner {
+  	padding: 8px;
+  }
+
+  #chat-header{
+  	padding: 10px 15px;
+  	color: white;
+  	font-family: "comic sans ms";
+  	background: #bfd255; /* Old browsers */
+  	background: -moz-linear-gradient(top,  #bfd255 0%, #8eb92a 50%, #72aa00 51%, #9ecb2d 100%); /* FF3.6+ */
+  	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#bfd255), color-stop(50%,#8eb92a), color-stop(51%,#72aa00), color-stop(100%,#9ecb2d)); /* Chrome,Safari4+ */
+  	background: -webkit-linear-gradient(top,  #bfd255 0%,#8eb92a 50%,#72aa00 51%,#9ecb2d 100%); /* Chrome10+,Safari5.1+ */
+  	background: -o-linear-gradient(top,  #bfd255 0%,#8eb92a 50%,#72aa00 51%,#9ecb2d 100%); /* Opera 11.10+ */
+  	background: -ms-linear-gradient(top,  #bfd255 0%,#8eb92a 50%,#72aa00 51%,#9ecb2d 100%); /* IE10+ */
+  	background: linear-gradient(to bottom,  #bfd255 0%,#8eb92a 50%,#72aa00 51%,#9ecb2d 100%); /* W3C */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#bfd255', endColorstr='#9ecb2d',GradientType=0 ); /* IE6-9 */
+  }
+
+  .message-me{
+  	padding: 8px;
+  	background-color: rgb(180, 180, 213);
+  	margin: 5px 0;
+  	border-radius: 5px;
+  	word-wrap: break-word;
+  }
+
+  #chat-message {
+  	margin: 0px;
+  }
+
+</style>
+</head>
+<body>
+  	<div id="chat-inner">
+	  	<div id="chat-output"></div>
+	  	<form id="chat-message">
+	  		<textarea type="text" id="chat-input"></textarea> 
+	  	</form>
+  	</div>
+</body>
+
+<script type="text/javascript" src="scripts/jquery-1.10.2.js"></script>
+
+<script type="text/javascript">
+  
+  var enterPressed = false;
+
+	$("#chat-input").keypress(function(e) {
+    var value = $('#chat-input').val();
+
+		if(e && e.keyCode === 13) {
+      $('#chat-input').trigger('focusout');
+      if(value*1 !== 0) {
+        chatOut({message : value});
+      }
+      $(this).val('');
+    }
+	});
+
+  $("#chat-input").keyup(function (e){
+    if(e && e.keyCode === 13)
+      $(this).val('');
+  });
+
+	var chatOut = function (object){
+		var message = '<div class="message-me">'+object.message;+'</div>';
+
+		$('#chat-output').append(message);
+
+		var div = $('#chat-output');
+		div.scrollTop(div.scrollTop() + 9999999999);
+	};
+
+</script>
+
+</html>

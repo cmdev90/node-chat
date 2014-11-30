@@ -1,0 +1,240 @@
+<html>
+<head>
+<title>Test</title>
+<style>
+  #chat-box {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    border: 1px solid #DDDDDD;
+    /*border-top-left-radius: 10px;
+    border-top-right-radius: 10px;*/
+    margin: 0 10px;
+    border-bottom: 5px;
+    box-shadow: 0px 0px 15px #888888;
+  }
+
+  #chat-input {
+    position: fixed;
+    bottom: 6;
+    width: 260px;
+    height: 42px;
+    font-size: 14px;
+    resize: none;
+    font-family: "comic sans ms";
+  }
+
+  #chat-output {
+    /*border: 1px solid #DDDDDD;*/
+    max-height: 250px;
+    width : 260px;
+    margin-bottom: 8px;
+    overflow: auto;
+  }
+
+  #chat-inner {
+    padding: 8px;
+    height:300px;
+    display: none;
+  }
+
+  #chat-header{
+    padding: 10px 15px;
+    min-width: 150px;
+    color: white;
+    font-family: "comic sans ms";
+    background: #bfd255; /* Old browsers */
+    background: -moz-linear-gradient(top,  #bfd255 0%, #8eb92a 50%, #72aa00 51%, #9ecb2d 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#bfd255), color-stop(50%,#8eb92a), color-stop(51%,#72aa00), color-stop(100%,#9ecb2d)); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top,  #bfd255 0%,#8eb92a 50%,#72aa00 51%,#9ecb2d 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top,  #bfd255 0%,#8eb92a 50%,#72aa00 51%,#9ecb2d 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top,  #bfd255 0%,#8eb92a 50%,#72aa00 51%,#9ecb2d 100%); /* IE10+ */
+    background: linear-gradient(to bottom,  #bfd255 0%,#8eb92a 50%,#72aa00 51%,#9ecb2d 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#bfd255', endColorstr='#9ecb2d',GradientType=0 ); /* IE6-9 */
+  }
+
+  #chat-header {
+    cursor: pointer;
+  }
+
+  .message-me{
+    padding: 8px;
+    background-color: rgb(180, 180, 213);
+    margin: 5px 0;
+    border-radius: 5px;
+    word-wrap: break-word;
+    font-family: cursive;
+    font-size: 14px;
+  }
+
+  .message-you{
+    padding: 8px;
+    background-color: #BEEEBC;
+    margin: 5px 0;
+    border-radius: 5px;
+    word-wrap: break-word;
+    font-family: cursive;
+    font-size: 14px;
+  }
+
+  #chat-message {
+    margin: 0px;
+  }
+
+  .date-time {
+    text-align: right;
+    font-size: 10px;
+    font-family: arial;
+  }
+
+</style>
+</head>
+<body>
+  <div id="chat-box">
+    <div id="chat-header">Online Chat</div>
+    <div id="chat-inner">
+        <div id="chat-output"></div>
+        <form id="chat-message">
+            <textarea type="text" id="chat-input"></textarea> 
+        </form>
+    </div>
+  </div>
+</body>
+
+<script type="text/javascript" src="scripts/jquery-1.10.2.js"></script>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script type="text/javascript">
+
+  // Status indicators for messages.
+  var FLAGS = {
+    NCC : 1, // new client connection.
+    LIST : 2, // sends list of all avaliable clients.
+    REM : 3, // remove client.
+    CREQ : 4, // Chat request flag.
+    JOINT : 5, // tells the client to join this room.
+  }
+
+  var me = {}; // object that holds connection information about this client.
+
+  var socket = io.connect(window.location.origin);
+
+  socket.on('alert', function (data) {
+    console.log(data);
+
+    switch(data.type){
+      case (FLAGS.NCC) :
+        $('body').append('<button class="client" id="' + data.cid + '">' + data.cid + '</button>');
+        break;
+
+      case (FLAGS.LIST) :
+        $.each(data.clients, function (index, value){
+          $('body').append('<button class="client" id="' + value.cid + '">' + value.cid + '</button>');
+        });
+        me.id = data.me;
+        me.nonce = data.nonce;
+        break;
+
+      case (FLAGS.REM) :
+        // Flag sent to remove the specified client as they have
+        // disconnected from the server.
+        $('#' + data.cid).remove();
+        break;
+
+      case (FLAGS.CREQ) :
+        // A chat request broadcast was sent. If addressed to me
+        // send an acknowledgment to the server with my nonce for
+        // authentication.
+        if(data.cid === me.id) {
+          socket.emit('acknowledge', {nonce : me.nonce, room : data.room});
+        }
+        break;
+
+      case (FLAGS.JOINT) :
+        $("#chat-inner").toggle("fast");
+
+        // put this here for the time being...
+        me.room = data.room;
+        break;
+
+      default : break;
+
+    }
+  });
+
+  $(document).on('click', '.client', function (){
+    var client = $(this).attr('id');
+    console.log(client);
+    socket.emit('chat', { id : client });
+  });
+
+  socket.on('err', function () {
+    alert("Oh Snap...\n\nThe monkeys we hired broke somthing again. Service will be restored shortly.\n\nPlease contact us at cherlton.ixanos.co.tt if problems persist.");
+  });
+
+  socket.on('message', function (object) {
+      var message = '<div class="message-you">' + object.message + 
+                    '<br/><div class="date-time">' + object.timestamp + 
+                    '</div></div>';
+      
+      $('#chat-output').append(message);
+
+      var div = $('#chat-output');
+      div.scrollTop(div.scrollTop() + 9999999999);
+  });
+
+  var getDateTime = function () {
+    var curr = new Date();
+    var datetime = "";
+
+    datetime += curr.getDate() + '-' +
+                (curr.getMonth() + 1) + '-' +
+                curr.getFullYear() + ' @ ' +
+                curr.getHours() + ':' +
+                curr.getMinutes();
+
+    return datetime;
+  }
+
+  $("#chat-input").keypress(function(e) {
+    var value = $('#chat-input').val();
+
+    if(e && e.keyCode === 13) {
+      $('#chat-input').trigger('focusout');
+      if(value*1 !== 0) {
+        chatOut({message : value});
+      }
+      $(this).val('');
+    }
+  });
+
+  $("#chat-input").keyup(function (e){
+    if(e && e.keyCode === 13)
+      $(this).val('');
+  });
+
+  var chatOut = function (object){
+      var message = '<div class="message-me">' + object.message + 
+                    '<br/><div class="date-time">' + getDateTime() + 
+                    '</div></div>';
+
+      object.timestamp = getDateTime();
+      object.room = me.room;
+      console.log(object);
+
+      socket.emit('message', object);
+      
+      $('#chat-output').append(message);
+
+      var div = $('#chat-output');
+      div.scrollTop(div.scrollTop() + 9999999999);
+  };
+
+  $('#chat-header').on('click', function (){
+    $("#chat-inner").toggle("fast");
+  })
+</script>
+
+
+</html>
